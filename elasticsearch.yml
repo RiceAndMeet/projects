@@ -1,0 +1,47 @@
+apiVersion: elasticsearch.k8s.elastic.co/v1alpha1
+kind: Elasticsearch
+metadata:
+  name: elasticsearch
+spec:
+  version: 7.1.0
+  http:
+    service:  
+      spec:
+        type: LoadBalancer
+        ports:
+        - name: elastic-https-port
+          port: 9200
+          targetPort: 9200
+          protocol: TCP
+    tls:
+      selfSignedCertificate:
+        subjectAltNames:
+        - ip: 0.0.0.0
+  nodes:
+  - nodeCount: 3
+    config:
+      node.master: false
+      node.data: true
+      node.ingest: false
+    volumeClaimTemplates:
+    - metadata:
+        name: elasticsearch-data
+      spec:
+        accessModes:
+        - ReadWriteOnce
+        resources:
+          requests:
+            storage: 100Gi
+  - nodeCount: 2
+    config:
+      node.master: true
+      node.data: false
+      node.ingest: true
+    podTemplate:
+      spec:
+        containers:
+        - name: elasticsearch-master
+          resources:
+            limits:
+              memory: 4Gi
+              cpu: 1
